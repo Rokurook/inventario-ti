@@ -1,0 +1,4 @@
+.env
+n8n_data/
+snipe-it_data/
+mysql_data/

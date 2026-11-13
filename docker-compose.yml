@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  snipe-mysql:
+    image: mariadb:10.6
+    container_name: snipe-mysql
+    env_file:
+      - .env
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      - snipe-db-data:/var/lib/mysql
+    networks:
+      - inventario-net
+    restart: unless-stopped
+
+  snipe-it:
+    image: snipe/snipe-it:latest
+    container_name: snipe-it
+    env_file:
+      - .env
+    ports:
+      - "8000:80"
+    environment:
+      - APP_ENV=${APP_ENV}
+      - APP_DEBUG=${APP_DEBUG}
+      - APP_KEY=${APP_KEY}
+      - APP_URL=${APP_URL}
+      - APP_TIMEZONE=${APP_TIMEZONE}
+      - DB_CONNECTION=mysql
+      - DB_HOST=snipe-mysql
+      - DB_DATABASE=${MYSQL_DATABASE}
+      - DB_USERNAME=${MYSQL_USER}
+      - DB_PASSWORD=${MYSQL_PASSWORD}
+    depends_on:
+      - snipe-mysql
+    networks:
+      - inventario-net
+    restart: unless-stopped
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: n8n
+    env_file:
+      - .env
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=0.0.0.0.
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+    volumes:
+      - n8n-data:/home/node/.n8n
+    networks:
+      - inventario-net
+    restart: unless-stopped
+
+networks:
+  inventario-net:
+    driver: bridge
+
+volumes:
+  snipe-db-data:
+  n8n-data:
